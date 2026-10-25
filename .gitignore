@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+node_modules/
+coverage/
+dist/
+.aws-sam/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.log
+.DS_Store
+Thumbs.db
