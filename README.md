@@ -14,8 +14,13 @@ collection and score-reveal controls are not implemented yet.
 ## Hosting decisions
 
 - **Selected:** a public GitHub Pages frontend, independent of StreetBot.
-- **Recommended, awaiting selection:** EventBridge Scheduler -> AWS Lambda
-  collector -> S3 snapshots -> CloudFront -> the Pages frontend.
+- **Required:** $0 ongoing hosting cost, without depending on introductory
+  credits. The previous S3/CloudFront recommendation is withdrawn.
+- **Acceptable storage candidate:** DynamoDB Standard with provisioned capacity
+  within its ongoing free allowance, not on-demand billing.
+- **Backend decision still open:** GitHub Actions collection for the simplest
+  free setup, or scheduled Lambda with DynamoDB within AWS free allowances.
+  See the architecture document for publishing and scheduling tradeoffs.
 - **Not needed for the first version:** MongoDB, StreetBot/Fly access,
   user accounts, API Gateway or an always-on backend server.
 
