@@ -9,18 +9,19 @@ collection and score-reveal controls are not implemented yet.
 
 - Website: https://joellimrl.github.io/street-football/
 - [Architecture and implementation plan](docs/architecture.md)
+- [Set up cron-job.org](docs/cron-job-setup.md)
 - [Source licence](LICENSE)
 
 ## Hosting decisions
 
-- **Selected:** GitHub Actions for scheduled collection and GitHub Pages for
-  the public frontend and JSON snapshots. The source repository stays public.
+- **Selected:** cron-job.org triggers GitHub Actions for collection; GitHub
+  Pages hosts the public frontend and JSON snapshots. The repository stays public.
 - **Required:** $0 ongoing hosting cost. Use standard runners, small artifacts
   and short retention within included storage. No paid runner/storage upgrades.
 - **Excluded:** AWS, MongoDB, StreetBot/Fly access, user accounts and an
   always-on backend server.
-- **Accepted tradeoff:** scheduled Actions can be delayed or dropped and can
-  be disabled after 60 days without repository activity. Preserve the last
+- **Accepted tradeoff:** external triggers and Actions runs can fail or be
+  delayed. The dispatch token needs renewal before expiry. Preserve the last
   valid data, retry unfinished matches and show update freshness.
 
 The collector still needs private provider API credentials. Those belong in
@@ -48,8 +49,10 @@ dependencies or network data requests. Do not mistake it for the completed app.
 ## Deployment
 
 Pushes to `main` deploy the `public/` directory using GitHub Actions. The
-workflow can also be run manually. GitHub Pages must use **GitHub Actions** as
-its publishing source. No backend credentials are used by this workflow.
+workflow can also be run manually or through GitHub's workflow dispatch API.
+GitHub Pages must use **GitHub Actions** as its publishing source. No backend
+credentials are used by this workflow yet. Keep the recurring cron-job.org job
+disabled until the collector is implemented; a test run only deploys the starter.
 
 For forks, update this README and the starter's repository link, then enable
 Pages in the fork's settings. The stylesheet uses a relative path so project

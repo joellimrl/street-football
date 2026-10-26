@@ -5,7 +5,7 @@ Selected: 2026-10-26.
 ## Agreed scope
 
 Build a free, open-source, public Premier League schedule and highlights site.
-Use **GitHub Actions + GitHub Pages only**. The source repository stays public.
+Use **cron-job.org + GitHub Actions + GitHub Pages**. The source repository stays public.
 The hosting budget is $0. AWS, MongoDB and StreetBot's Fly deployment are out of
 scope. Scores remain hidden until the user reveals them.
 
@@ -15,9 +15,10 @@ not functionality already deployed.
 
 ## How it works
 
-1. A scheduled Actions workflow runs a portable CommonJS Node.js collector on
-   a standard GitHub-hosted runner. Proposed starting cadence: every 30 minutes,
-   offset from the start of the hour, with manual dispatch available.
+1. cron-job.org sends an authenticated POST to GitHub's workflow dispatch API
+   every 30 minutes, at minutes 7 and 37. The workflow runs a portable CommonJS
+   Node.js collector on a standard GitHub-hosted runner. Manual dispatch remains
+   available; there is no GitHub schedule trigger.
 2. It loads the last published snapshot and fetches fixture/highlight updates
    from the configured providers. API credentials come from Actions secrets.
 3. It merges by stable fixture/video IDs, carries unfinished checks forward and
@@ -62,9 +63,19 @@ durability. Keep the state format exportable for recovery.
 
 ## Scheduling limitations
 
-Scheduled Actions can be delayed or dropped. Public-repository schedules can
-be disabled after 60 days without repository activity, requiring re-enablement.
-This design accepts those limits for simplicity and no separately billed backend.
+GitHub documents its 60-day inactivity restriction for scheduled workflows.
+Use workflow_dispatch with an external scheduler instead of a schedule trigger;
+do not add keepalive commits or automatic workflow re-enablement.
+
+cron-job.org holds a fine-grained GitHub token restricted to this repository
+with Actions write permission. Renew it before expiry. Provider credentials
+remain in Actions secrets. The scheduler's HTTP success only proves dispatch
+was accepted, not that collection or deployment succeeded. Monitor Actions
+failures and the site's data freshness as well as trigger failures.
+
+Neither the external scheduler nor Actions guarantees exact execution times.
+See [cron-job.org setup](cron-job-setup.md) for the request settings. Keep the
+recurring job disabled while this repository contains only the starter page.
 
 Persist pending matches and retry across runs for at least seven days, tapering
 frequency. A missed run must not permanently miss a delayed highlight. Show
@@ -109,6 +120,9 @@ advertise exact refresh timing or real-time scores.
 - [Free standard runners for public repositories](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
 - [GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)
 - [Scheduled workflow limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+- [Workflow dispatch API](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event)
+- [cron-job.org features](https://cron-job.org/en/)
+- [cron-job.org FAQ](https://cron-job.org/en/faq/)
 - [Pages deployment workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 - [Football-data.org terms](https://www.football-data.org/about)
 - [YouTube developer policies](https://developers.google.com/youtube/terms/developer-policies)
