@@ -8,24 +8,23 @@ choose to reveal them, and follow links to official highlights.
 collection and score-reveal controls are not implemented yet.
 
 - Website: https://joellimrl.github.io/street-football/
-- [Backend comparison and implementation plan](docs/architecture.md)
+- [Architecture and implementation plan](docs/architecture.md)
 - [Source licence](LICENSE)
 
 ## Hosting decisions
 
-- **Selected:** a public GitHub Pages frontend, independent of StreetBot.
-- **Required:** $0 ongoing hosting cost, without depending on introductory
-  credits. The previous S3/CloudFront recommendation is withdrawn.
-- **Acceptable storage candidate:** DynamoDB Standard with provisioned capacity
-  within its ongoing free allowance, not on-demand billing.
-- **Backend decision still open:** GitHub Actions collection for the simplest
-  free setup, or scheduled Lambda with DynamoDB within AWS free allowances.
-  See the architecture document for publishing and scheduling tradeoffs.
-- **Not needed for the first version:** MongoDB, StreetBot/Fly access,
-  user accounts, API Gateway or an always-on backend server.
+- **Selected:** GitHub Actions for scheduled collection and GitHub Pages for
+  the public frontend and JSON snapshots. The source repository stays public.
+- **Required:** $0 ongoing hosting cost. Use standard runners, small artifacts
+  and short retention within included storage. No paid runner/storage upgrades.
+- **Excluded:** AWS, MongoDB, StreetBot/Fly access, user accounts and an
+  always-on backend server.
+- **Accepted tradeoff:** scheduled Actions can be delayed or dropped and can
+  be disabled after 60 days without repository activity. Preserve the last
+  valid data, retry unfinished matches and show update freshness.
 
 The collector still needs private provider API credentials. Those belong in
-its runtime secret configuration, never in browser JavaScript or Git history.
+GitHub Actions secrets, never in browser JavaScript or Git history.
 Site visitors read a cached public JSON snapshot; they do not trigger provider
 requests or collector executions.
 

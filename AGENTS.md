@@ -3,14 +3,15 @@
 ## Scope
 
 A free, open-source, public Premier League schedule and highlights site.
-This repository is independent of StreetBot. GitHub Pages is the chosen
-frontend host. The backend is proposed, not yet provisioned.
+This repository is independent of StreetBot. GitHub Actions is the selected
+collector runner; GitHub Pages hosts the frontend and public JSON snapshots.
+The budget is $0. AWS and separately hosted backend services are out of scope.
 
 ## Current state
 
 - `public/` is a buildless static starter, not a working fixture dashboard.
 - `.github/workflows/pages.yml` publishes only `public/` to GitHub Pages.
-- `docs/architecture.md` records backend options and the implementation plan.
+- `docs/architecture.md` records the selected architecture and implementation plan.
 - No provider credentials, real fixture data, collector, database or AWS
   resources are included.
 
@@ -22,6 +23,11 @@ frontend host. The backend is proposed, not yet provisioned.
 - Keep all provider API credentials in the collector's secret configuration.
   Browser bundles and published snapshots must contain only public data.
 - Do not couple the site to StreetBot, its Fly deployment or MongoDB.
+- Keep the repository public, use standard Actions runners and keep artifacts
+  small with short retention within included storage. Do not add paid services.
+- Persist only public retry/link state in the published snapshot. All deploy
+  paths must preserve the last valid data; never use Actions cache as the only
+  durable state or commit changing provider metadata to Git history.
 - Scores are hidden by default. Avoid score spoilers in titles, previews and
   accessibility labels. Review YouTube metadata display requirements before
   implementing video cards; do not obscure or modify an embedded player.

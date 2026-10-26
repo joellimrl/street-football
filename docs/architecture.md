@@ -1,133 +1,115 @@
-# Hosting and backend plan
+# Architecture and implementation plan
 
-Reviewed: 2026-10-26.
+Selected: 2026-10-26.
 
-## Decisions
+## Agreed scope
 
-The frontend will be a free, public GitHub Pages site. The source is open
-source. Scores are hidden by default. The application must be independent of
-StreetBot and should put no extra collection or visitor load on its Fly app.
+Build a free, open-source, public Premier League schedule and highlights site.
+Use **GitHub Actions + GitHub Pages only**. The source repository stays public.
+The hosting budget is $0. AWS, MongoDB and StreetBot's Fly deployment are out of
+scope. Scores remain hidden until the user reveals them.
 
-**Budget update: $0 ongoing hosting cost is required.** Introductory credits or
-an estimate of "a small bill" do not satisfy that requirement. DynamoDB is an
-acceptable storage candidate. No backend or AWS resources have been deployed.
+The repository and Pages starter exist. The collector, snapshot handling and
+fixture UI are still to be implemented. This is the selected architecture,
+not functionality already deployed.
 
-The previous S3/CloudFront recommendation is superseded. The backend choice
-remains open between a GitHub-based setup and an AWS design operating within
-ongoing free allowances.
+## How it works
 
-## Revised cost assessment
+1. A scheduled Actions workflow runs a portable CommonJS Node.js collector on
+   a standard GitHub-hosted runner. Proposed starting cadence: every 30 minutes,
+   offset from the start of the hour, with manual dispatch available.
+2. It loads the last published snapshot and fetches fixture/highlight updates
+   from the configured providers. API credentials come from Actions secrets.
+3. It merges by stable fixture/video IDs, carries unfinished checks forward and
+   validates a new snapshot. An upstream failure must not erase valid data.
+4. It publishes the static frontend and sanitized JSON together to Pages.
+5. Visitors read static files. Filters, favourite teams and score reveal run
+   in the browser without triggering collection or backend requests.
 
-- S3's current introductory credits/free-plan offer is time-limited; do not
-  use it as the foundation of an indefinitely free storage design.
-- DynamoDB Standard has an ongoing allowance of 25 GB, 25 provisioned read
-  capacity units and 25 provisioned write capacity units. AWS describes the
-  allowance on a per-Region, per-payer-account basis; it is shared, not a new
-  allocation for each table. On-demand requests are billed and do not receive
-  that provisioned-capacity allowance.
-- For a small collector, start with fixed provisioned capacity such as 1 RCU
-  and 1 WCU, pace reads/writes and disable autoscaling. Keep table data small;
-  omit paid backups/PITR, DAX and additional replicas. Check available shared
-  allowance before provisioning. These controls reduce cost exposure but do
-  not constitute an account-wide hard spending cap.
-- DynamoDB cannot simply replace S3's public JSON URL. A publisher must export
-  public data to Pages, or a public API must serve it. Prefer Pages exports so
-  visitors do not invoke billable AWS compute or perform database reads.
-- AWS Budgets can warn after charges occur; they are not a guarantee that the
-  bill cannot exceed zero. Account-wide Lambda, logging, transfer and other
-  service allowances must be considered if using AWS.
+No database, public API server, AWS account or custom domain is required.
 
-## Revised approaches for selection
+## State and recovery
 
-| Approach | Persistence and publishing | Cost boundary | Scheduling tradeoff |
-| --- | --- | --- | --- |
-| GitHub Actions + Pages, no AWS | Collect, validate and publish JSON with the site; carry forward the last published snapshot | Standard public-repository runners are free; keep artifacts within included storage, with short retention and no paid runners or storage expansion | Runs may be late/dropped or disabled after inactivity |
-| GitHub Actions + provisioned DynamoDB + Pages | Collector runs in Actions; DynamoDB keeps durable pending-match state; the same run publishes a snapshot | Adds conditional AWS free-tier dependence, but no Lambda or visitor-driven AWS requests | Same Actions scheduling limits; durable state supports catch-up |
-| EventBridge + Lambda + provisioned DynamoDB, with a Pages publisher | Lambda maintains data independently; a separate publisher exports it into the Pages deployment | Expected $0 only while all relevant ongoing allowances and feature constraints hold | Collector has independent scheduling; publication still needs its own trigger/recovery design |
+The deployed Pages snapshot holds state between runs: public fixture data,
+highlight links, freshness timestamps and minimal retry state. Private
+diagnostics and credentials never enter published files.
 
-For a strict no-AWS-billing-exposure interpretation of $0, prefer the first
-approach. If using AWS within its free allowances is acceptable, DynamoDB is a
-better storage fit than S3. The original desire for consistent updates remains
-relevant: do not silently present Actions scheduling as equivalent to a managed
-scheduler.
+Do not rely on runner disk, an evictable Actions cache or a short-lived artifact
+as the sole state store. Do not commit changing provider metadata to Git
+history. Expiring deployment artifacts must not remove the deployed snapshot.
 
-For the GitHub-only approach, carry forward public retry/link state from the
-last successfully deployed snapshot. Never rely solely on an evictable cache
-or runner disk. All publishing paths, including source-code pushes, must
-preserve valid data. If the prior snapshot cannot be retrieved, stop publication
-and retain the current site; use an explicit recovery/bootstrap path. This
-does not provide the same independently backed-up durability as a database.
+Use one publishing workflow/concurrency group. Code pushes and manual runs must
+preserve snapshots just as scheduled runs do. After initial setup, if the prior
+snapshot cannot be fetched or validated, stop publication and keep the current
+site. Bootstrap and recovery must be explicit: an unexpected 404 must not
+silently reset the season.
 
-Do not commit changing provider metadata to Git history. Use short-lived Pages
-artifacts and refresh/delete live metadata according to provider requirements.
-With Actions scheduling, retry unfinished matches across runs and display the
-last successful update time. Delays and manual re-enablement after inactivity
-remain limitations, even with correct retry handling.
+This is simpler than a database and does not provide independently backed-up
+durability. Keep the state format exportable for recovery.
 
-All candidates keep browser reads separate from collection. Backend services
-remain unprovisioned while the zero-cost tradeoff is being resolved.
+## Keeping hosting at $0
 
-## Requirements shared by the candidate designs
+- Keep the repository public and use a standard runner such as `ubuntu-latest`.
+  Larger runners are paid even for public repositories.
+- Keep generated files small and Pages artifact retention short, initially one
+  day. Avoid redundant caches and large artifacts; check shared account storage.
+  Public visibility does not make every GitHub feature or unlimited storage free.
+- Stay within included storage and Pages limits. Do not enable paid runner,
+  cache or artifact-storage upgrades.
+- Keep provider calls within free plans. Hosting being free does not exempt
+  the application from provider quotas or terms.
+- No paid API subscription, cloud service or domain purchase is required.
 
-- No StreetBot, Fly or ongoing MongoDB dependency. The small season dataset
-  needs persistent state, not access to personal information.
-- Keep provider credentials private in the collector configuration. If Actions
-  accesses AWS, use a repository-scoped OIDC role, not long-lived AWS keys.
-- Publish only public, validated fixture data and verified highlight links.
-  Browser filters and favourite-team/score-reveal preferences stay local.
-- Preserve valid data when an upstream fails. An outage is not an empty season.
-  Store actual last-success timestamps separately for fixtures and highlights.
-- Use one writer, stable match/video IDs and retry-safe writes. Persist pending
-  matches so a late upload can still be found for at least seven days.
-- Retry transient errors with backoff, honour rate limits and surface invalid
-  credentials as configuration failures. Reject ambiguous video associations.
-- Default to Asia/Singapore display time and store kickoff timestamps in UTC.
-- The snapshot's scores are public data. Spoiler protection is a display
-  preference, not an access-control mechanism.
-- The MVP has no per-visitor backend work, paid API subscriptions or custom
-  domain purchase. Source-code hosting and site delivery remain on GitHub.
+## Scheduling limitations
 
-## Implementation order after backend selection
+Scheduled Actions can be delayed or dropped. Public-repository schedules can
+be disabled after 60 days without repository activity, requiring re-enablement.
+This design accepts those limits for simplicity and no separately billed backend.
 
-1. Define the snapshot contract and implement a portable CommonJS collector
-   with fixture/provider and storage adapters, independent of its runner.
-2. Test delayed uploads, provider failures, duplicate runs, rescheduled matches,
-   stale snapshots, publication failures and local-date boundaries offline.
-3. Configure the selected persistence and publisher. Verify the actual free
-   allowances and account settings before provisioning any AWS resources.
-4. Build upcoming/results/highlights views, filters, score reveal and freshness
-   indicators against published JSON.
+Persist pending matches and retry across runs for at least seven days, tapering
+frequency. A missed run must not permanently miss a delayed highlight. Show
+separate last-success timestamps for fixtures and highlights, plus stale-data
+warnings. Workflow success does not prove every provider succeeded. Do not
+advertise exact refresh timing or real-time scores.
+
+## Product and data requirements
+
+- Full-season fixtures, upcoming/results/highlights views and team/gameweek
+  filters. UTC kickoff timestamps; Asia/Singapore display time by default.
+- Scores hidden by default, including score-bearing page titles and previews.
+  Snapshot scores are public data; spoiler protection is a UI preference.
+- Verified official highlight links matched using stable channels, aliases
+  and timing evidence. Ambiguous candidates remain unresolved.
+- Distinguish no fixtures, highlights not found yet and upstream failures.
+- Use team names and original graphics unless asset rights are established.
+  Include the fixture provider's attribution.
+- Check the exact YouTube link/metadata presentation before implementing
+  spoiler-free video cards. Do not download videos or modify embedded players.
+  Follow metadata refresh/deletion rules; prolonged workflow inactivity is an
+  operational issue, not an exemption.
+- Fork operators supply their own credentials. MIT covers source code, not
+  third-party content.
+
+## Implementation sequence
+
+1. Define and validate the snapshot contract, bootstrap/recovery behaviour,
+   maximum size and retention rules.
+2. Implement the collector and offline tests for delayed uploads, outages,
+   rate limits, ambiguous matches, duplicate runs and rescheduling.
+3. Integrate collection and publication into one workflow. Test snapshot
+   preservation during code pushes and failed fetches/deployments.
+4. Build the fixture UI, local-time grouping, score reveal and freshness states.
 5. Validate over a complete matchweek, then disable StreetBot's `youtubePLFeed`
-   job through supported configuration. Until cutover, the existing job stays
-   live. An optional historical import is a separate one-time export; the new
-   collector never needs permanent MongoDB access.
-
-## Public-site constraints
-
-Use team names and original graphics unless asset rights are established.
-Include football-data.org attribution. Keep videos on official YouTube
-channels and link out; do not download or rehost them. Review the exact
-metadata-free link presentation against YouTube's requirements before building
-spoiler-free video cards. API metadata must follow refresh/deletion rules;
-public Git commits are not an appropriate permanent metadata archive.
-
-Publishing the application under MIT does not relicense third-party content.
-Fork operators supply their own provider credentials and observe provider terms.
+   through supported configuration. Its job stays live until cutover. Any
+   historical import is a separate one-time export, not ongoing MongoDB access.
 
 ## Sources
 
-- [DynamoDB ongoing free allowance](https://aws.amazon.com/dynamodb/pricing/)
-- [DynamoDB always-free documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html)
-- [S3 free-plan limits](https://aws.amazon.com/s3/pricing/)
-- [Free standard Actions runners for public repositories](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
-- [Actions billing and included storage](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
-- [AWS Budgets notification delays](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html)
-- [GitHub Pages deployment workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
-- [GitHub Actions schedule limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
-- [EventBridge scheduling for Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-eventbridge-scheduler.html)
-- [Lambda pricing](https://aws.amazon.com/lambda/pricing/)
-- [EventBridge pricing](https://aws.amazon.com/eventbridge/pricing/)
-- [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/)
+- [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+- [Free standard runners for public repositories](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
+- [GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)
+- [Scheduled workflow limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+- [Pages deployment workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 - [Football-data.org terms](https://www.football-data.org/about)
 - [YouTube developer policies](https://developers.google.com/youtube/terms/developer-policies)
 - [YouTube presentation guidance](https://developers.google.com/youtube/terms/developer-policies-guide)
