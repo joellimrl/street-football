@@ -10,13 +10,14 @@ The budget is $0. AWS and separately hosted backend services are out of scope.
 
 ## Current state
 
-- `public/` is a buildless static starter, not a working fixture dashboard.
-- `.github/workflows/pages.yml` publishes only `public/` to GitHub Pages.
-- `docs/cron-job-setup.md` describes the external trigger. Keep recurring
-  execution disabled until the collector and snapshot preservation are ready.
+- `public/` is the buildless fixture dashboard; `collector/` holds data adapters,
+  matching and validation; `scripts/publish.js` preserves state and builds `dist/`.
+- `.github/workflows/pages.yml` tests offline, collects, then publishes `dist/`.
+- `docs/cron-job-setup.md` describes the external trigger; `docs/operations.md`
+  covers credentials, initial bootstrap, recovery and source failures.
 - `docs/architecture.md` records the selected architecture and implementation plan.
-- No provider credentials, real fixture data, collector, database or AWS
-  resources are included.
+- Provider credentials belong only in GitHub Actions secrets. Real data is
+  published as a snapshot, never committed to this repository.
 
 ## Boundaries
 
@@ -43,9 +44,9 @@ The budget is $0. AWS and separately hosted backend services are out of scope.
 ## Implementation and validation
 
 - Prefer a static frontend and a portable CommonJS Node.js collector.
-- No framework or dependency installation is needed for the current starter.
-- Add meaningful offline tests when the collector is implemented: delayed
+- No framework or dependency installation is needed. Use Node 22 or later.
+- Run `node --test tests/*.test.js` for the offline suite: delayed
   uploads, upstream failures, duplicate runs, rescheduling and time zones.
-- Run `node --check` for JavaScript files changed in future work.
+- Run `node --check` for each changed JavaScript file.
 - Preserve the last valid snapshot when fetching or validation fails.
 - Report checks performed and any external services contacted.

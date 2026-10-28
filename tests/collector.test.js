@@ -72,3 +72,20 @@ test('an idle discovery run must not postpone the next due highlight check', asy
     highlightsProvider: async () => ({ videos: [], removedIds: [], failedTeamIds: [], checkedFixtureIds: [], healthy: true }) });
   assert.equal(result.snapshot.fixtures[0].lastHighlightsCheckAt, '2026-10-29T08:00:00.000Z');
 });
+test('refreshed titles with different opponents or ambiguous fixtures lose their old attachment', async () => {
+  const previous = snapshot({ fixtures: [fixture({ highlights: [video()] })] });
+  const corrected = await collect({ previous, now: NOW, fixturesProvider: async () => payload(),
+    highlightsProvider: async () => ({ videos: [video({ title: 'Arsenal Liverpool | Premier League highlights' })], removedIds: [], failedTeamIds: [], healthy: true }) });
+  assert.deepEqual(corrected.snapshot.fixtures[0].highlights, []);
+  const repeat = payload(); repeat.matches.push({ ...repeat.matches[0], id: 456, utcDate: '2026-10-27T12:00:00Z' });
+  const ambiguous = await collect({ previous, now: NOW, fixturesProvider: async () => repeat,
+    highlightsProvider: async () => ({ videos: [video()], removedIds: [], failedTeamIds: [], healthy: true }) });
+  assert.ok(ambiguous.snapshot.fixtures.every(match => match.highlights.length === 0));
+});
+test('historical season evidence and youth age groups cannot match senior fixtures', () => {
+  for (const title of ['Arsenal Chelsea Highlights | 2004/05', 'Arsenal Chelsea U16 highlights',
+    'Arsenal Chelsea Under-17 highlights', 'Arsenal Chelsea highlights 2024', 'Arsenal Chelsea highlights 2026-08-10']) {
+    assert.equal(matchVideos([fixture()], [video({ title })], NOW).size, 0, title);
+  }
+  assert.equal(matchVideos([fixture()], [video({ title: 'Arsenal Chelsea highlights | 2026/27' })], NOW).size, 1);
+});

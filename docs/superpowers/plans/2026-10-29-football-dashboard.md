@@ -57,6 +57,11 @@ Interfaces: view model consumes schema v1; exposes selectFixtures, dateKey, scor
 - [ ] Publish the dashboard with an explicit bootstrap; if credentials are absent, publish a truthful awaiting-data state, with normal dispatch blocked from pretending collection succeeded.
 - [ ] Once secrets exist, perform the first live collection, inspect results, then advise enabling cron-job.org. Leave Telegram cutover until matchweek validation.
 
+Progress: Tasks 1–3 are implemented and verified. The final review found two
+matching defects; regression tests reproduced both and fixes brought the
+offline suite to 23 passing tests. Desktop/mobile browser interactions passed.
+Live release verification follows.
+
 ## Execution decisions
 
 The user explicitly asked to continue the previously approved plan; no repeated design approval is needed. Implementation proceeds inline with one final reviewer. The native worktree tool targets StreetBot rather than this separate repository, so a Git worktree at D:/Code/street-football-dashboard isolates the change. Browser inspection uses ego-browser; hosting remains GitHub Pages as requested.

@@ -61,7 +61,7 @@
     const highlights = V.safeHighlights(match);
     if (highlights.length) {
       const details = el('details', undefined, 'highlights-action');
-      details.append(el('summary', `Highlights ↗`));
+      details.append(el('summary', 'Highlights · may spoil'));
       details.addEventListener('toggle', () => {
         if (!details.open) { details.querySelector('.video-disclosure')?.remove(); return; }
         if (details.querySelector('.video-disclosure')) return;

@@ -9,9 +9,9 @@ Use **cron-job.org + GitHub Actions + GitHub Pages**. The source repository stay
 The hosting budget is $0. AWS, MongoDB and StreetBot's Fly deployment are out of
 scope. Scores remain hidden until the user reveals them.
 
-The repository and Pages starter exist. The collector, snapshot handling and
-fixture UI are still to be implemented. This is the selected architecture,
-not functionality already deployed.
+The collector, snapshot handling and fixture UI are implemented. Live operation
+requires provider credentials, initial bootstrap and the external cron job.
+See [Operations](operations.md) for deployment and recovery.
 
 ## How it works
 
@@ -74,8 +74,8 @@ was accepted, not that collection or deployment succeeded. Monitor Actions
 failures and the site's data freshness as well as trigger failures.
 
 Neither the external scheduler nor Actions guarantees exact execution times.
-See [cron-job.org setup](cron-job-setup.md) for the request settings. Keep the
-recurring job disabled while this repository contains only the starter page.
+See [cron-job.org setup](cron-job-setup.md) for the request settings. Enable the
+recurring job after the initial successful live publication.
 
 Persist pending matches and retry across runs for at least seven days, tapering
 frequency. A missed run must not permanently miss a delayed highlight. Show
@@ -103,13 +103,14 @@ advertise exact refresh timing or real-time scores.
 
 ## Implementation sequence
 
-1. Define and validate the snapshot contract, bootstrap/recovery behaviour,
-   maximum size and retention rules.
-2. Implement the collector and offline tests for delayed uploads, outages,
-   rate limits, ambiguous matches, duplicate runs and rescheduling.
-3. Integrate collection and publication into one workflow. Test snapshot
-   preservation during code pushes and failed fetches/deployments.
-4. Build the fixture UI, local-time grouping, score reveal and freshness states.
+1. Implemented: strict schema v1 with a 2 MiB snapshot limit, explicit bootstrap
+   and retention checks.
+2. Implemented: portable collector and offline tests for delayed uploads,
+   outages, rate limits, ambiguous matches, duplicate runs and rescheduling.
+3. Implemented: one test/collect/publish workflow with snapshot preservation
+   and degraded-source reporting after deployment.
+4. Implemented: fixture UI, local-time grouping, score reveal, favorite teams,
+   video-preview disclosures and freshness states.
 5. Validate over a complete matchweek, then disable StreetBot's `youtubePLFeed`
    through supported configuration. Its job stays live until cutover. Any
    historical import is a separate one-time export, not ongoing MongoDB access.

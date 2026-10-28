@@ -10,7 +10,18 @@ function mentions(title, team) {
 }
 function isHighlight(title) {
   const value = words(title);
-  return /\bhighlights?\b/.test(value) && !/\b(women|womens|ladies|u ?(?:18|19|21|23)|under ?(?:18|19|21|23)|youth|academy|legends|classic|throwback|retro|pl2|premier league 2|friendly|pre season|carabao|fa cup|efl cup)\b/.test(value);
+  return /\bhighlights?\b/.test(value) && !/\b(women|womens|ladies|u ?\d{1,2}|under ?\d{1,2}|youth|academy|legends|classic|throwback|retro|archive|rewind|on this day|pl2|premier league 2|friendly|pre season|carabao|fa cup|efl cup)\b/.test(value);
+}
+function titleDateMatches(title, kickoff) {
+  const date = new Date(kickoff); const year = date.getUTCFullYear();
+  const seasonStart = date.getUTCMonth() >= 6 ? year : year - 1;
+  const currentSeason = new RegExp(`\\b${seasonStart}\\s*[/–-]\\s*(?:${seasonStart + 1}|${String(seasonStart + 1).slice(-2)})\\b`, 'g');
+  const withoutSeason = title.replace(currentSeason, '');
+  if ([...withoutSeason.matchAll(/\b(?:19|20)\d{2}\b/g)].some(m => Number(m[0]) !== year)) return false;
+  for (const match of title.matchAll(/\b(20\d{2})-(\d{2})-(\d{2})\b/g)) {
+    if (match[0] !== date.toISOString().slice(0, 10)) return false;
+  }
+  return true;
 }
 function matchVideos(fixtures, videos, now) {
   const result = new Map();
@@ -21,7 +32,7 @@ function matchVideos(fixtures, videos, now) {
     const candidates = fixtures.filter(match => {
       const delay = Date.parse(video.publishedAt) - Date.parse(match.utcDate);
       return match.status === 'FINISHED' && delay >= 90 * 60000 && delay <= 7 * DAY &&
-        [match.home.id, match.away.id].includes(video.teamId) && mentions(video.title, match.home) && mentions(video.title, match.away);
+        [match.home.id, match.away.id].includes(video.teamId) && mentions(video.title, match.home) && mentions(video.title, match.away) && titleDateMatches(video.title, match.utcDate);
     });
     if (candidates.length !== 1) continue;
     const list = result.get(candidates[0].id) || [];

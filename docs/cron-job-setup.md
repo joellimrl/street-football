@@ -1,9 +1,8 @@
 # Set up cron-job.org
 
-This connects cron-job.org to the existing Pages workflow. The workflow
-currently deploys the starter page only. Save the cron job disabled and use a
-single test run; enable recurring execution after the collector and snapshot
-preservation are implemented.
+This connects cron-job.org to the collection and Pages publication workflow.
+Save the job disabled until both provider secrets and the first live bootstrap
+are verified, then enable recurring execution. See [Operations](operations.md).
 
 ## 1. Create a restricted GitHub token
 
@@ -29,7 +28,7 @@ needed for this UI setup.
 | Setting | Value |
 | --- | --- |
 | Title | Street Football refresh |
-| Enabled | Off until the collector is ready |
+| Enabled | On after the first successful live bootstrap |
 | URL | https://api.github.com/repos/joellimrl/street-football/actions/workflows/pages.yml/dispatches |
 | Request method | POST |
 | Time zone | Asia/Singapore |
@@ -70,8 +69,8 @@ Wait for that run to complete successfully and check the deployed site:
 
 https://joellimrl.github.io/street-football/
 
-This proves dispatch and deployment only. The site still has no live match
-data. The recurring job stays disabled until collection is implemented.
+Check both the workflow result and the site's fixture/highlight freshness.
+An HTTP success only confirms dispatch; source failures can occur later.
 
 Common errors:
 
@@ -84,10 +83,11 @@ Common errors:
 
 ## Later activation
 
-Keep this endpoint stable when collection is added to the publishing workflow.
-All publication paths must preserve the last valid snapshot. Add the football
-provider keys to GitHub Actions secrets, validate collection, then enable the
-cron job. Do not create a second publisher or a GitHub schedule trigger.
+This endpoint remains stable. All publication paths preserve the last valid
+snapshot. Add the provider keys to GitHub Actions secrets, complete initial
+bootstrap, verify the live data, then enable the cron job. Do not create a
+second publisher or a GitHub schedule trigger. Keep bootstrap out of routine
+cron requests: the body remains `{"ref":"main"}`.
 
 For forks, substitute your own owner and repository in the URL and token scope.
 

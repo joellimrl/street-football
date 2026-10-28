@@ -33,13 +33,12 @@ async function collect({ previous, fixturesProvider, highlightsProvider, now = n
     if (!highlightsProvider) throw new Error('Not configured');
     const result = await highlightsProvider(snapshot.fixtures, now);
     for (const video of result.videos) validateVideo(video);
-    const refreshed = new Map(result.videos.map(v => [v.videoId, v]));
-    const removed = new Set(result.removedIds);
-    const matched = matchVideos(snapshot.fixtures, result.videos, now);
+    const available = new Map([...snapshot.fixtures.flatMap(m => m.highlights), ...result.videos].map(v => [v.videoId, v]));
+    for (const id of result.removedIds) available.delete(id);
+    // Re-match saved links too: corrected titles or fixtures can invalidate an old association.
+    const matched = matchVideos(snapshot.fixtures, [...available.values()], now);
     for (const match of snapshot.fixtures) {
-      const kept = match.highlights.filter(v => !removed.has(v.videoId)).map(v => refreshed.get(v.videoId) || v);
-      const combined = new Map([...kept, ...(matched.get(match.id) || [])].map(v => [v.videoId, v]));
-      match.highlights = [...combined.values()].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt)).slice(0, 6);
+      match.highlights = (matched.get(match.id) || []).sort((a, b) => a.publishedAt.localeCompare(b.publishedAt)).slice(0, 6);
       if (result.checkedFixtureIds?.includes(match.id) &&
           !result.failedTeamIds.includes(match.home.id) && !result.failedTeamIds.includes(match.away.id)) match.lastHighlightsCheckAt = now;
     }
