@@ -66,3 +66,9 @@ test('partial highlight failure preserves links but does not claim complete sour
   assert.equal(result.snapshot.fixtures[0].highlights.length, 1);
   assert.equal(result.snapshot.sources.highlights.status, 'error');
 });
+test('an idle discovery run must not postpone the next due highlight check', async () => {
+  const previous = snapshot({ fixtures: [fixture({ lastHighlightsCheckAt: '2026-10-29T08:00:00.000Z' })] });
+  const result = await collect({ previous, now: NOW, fixturesProvider: async () => payload(),
+    highlightsProvider: async () => ({ videos: [], removedIds: [], failedTeamIds: [], checkedFixtureIds: [], healthy: true }) });
+  assert.equal(result.snapshot.fixtures[0].lastHighlightsCheckAt, '2026-10-29T08:00:00.000Z');
+});

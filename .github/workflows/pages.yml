@@ -5,8 +5,17 @@ on:
     branches: [main]
     paths:
       - public/**
+      - collector/**
+      - scripts/**
+      - tests/**
+      - package.json
       - .github/workflows/pages.yml
   workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: Allow first publication only when the snapshot returns 404
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,6 +27,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     permissions:
       contents: read
       pages: write
@@ -28,12 +38,33 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test offline
+        run: node --test tests/*.test.js
       - name: Configure Pages
+        id: pages
         uses: actions/configure-pages@v5
-      - name: Upload public files
+      - name: Collect and prepare publication
+        id: collect
+        run: node scripts/publish.js
+        env:
+          FOOTBALL_DATA_API_TOKEN: ${{ secrets.FOOTBALL_DATA_API_TOKEN }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          SNAPSHOT_URL: ${{ steps.pages.outputs.base_url }}/data/snapshot.json
+          BOOTSTRAP: ${{ inputs.bootstrap == true && 'true' || 'false' }}
+      - name: Upload site and snapshot
         uses: actions/upload-pages-artifact@v4
         with:
-          path: public
+          path: dist
+          retention-days: 1
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Report degraded sources after preserving the site
+        if: steps.collect.outputs.degraded == 'true'
+        run: |
+          echo '::error::Some data sources failed or are not configured. Last valid data was preserved; check the site freshness indicators and repository secrets.'
+          exit 1

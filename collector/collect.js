@@ -40,7 +40,7 @@ async function collect({ previous, fixturesProvider, highlightsProvider, now = n
       const kept = match.highlights.filter(v => !removed.has(v.videoId)).map(v => refreshed.get(v.videoId) || v);
       const combined = new Map([...kept, ...(matched.get(match.id) || [])].map(v => [v.videoId, v]));
       match.highlights = [...combined.values()].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt)).slice(0, 6);
-      if (match.status === 'FINISHED' && Date.parse(now) - Date.parse(match.utcDate) <= 8 * DAY &&
+      if (result.checkedFixtureIds?.includes(match.id) &&
           !result.failedTeamIds.includes(match.home.id) && !result.failedTeamIds.includes(match.away.id)) match.lastHighlightsCheckAt = now;
     }
     stamp('highlights', result.healthy);

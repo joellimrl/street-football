@@ -1,0 +1,14 @@
+{
+  "name": "street-football",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A static Premier League fixture and highlights companion",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "preview": "node scripts/preview.js",
+    "collect": "node scripts/publish.js"
+  }
+}
