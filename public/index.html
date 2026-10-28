@@ -1,55 +1,47 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A free, open-source Premier League schedule and highlights companion. Coming soon, with scores hidden until you choose to reveal them.">
-    <meta name="theme-color" content="#143d31">
-    <title>Street Football — Fixtures &amp; highlights</title>
-    <link rel="stylesheet" href="./styles.css">
-  </head>
-  <body>
-    <div class="page">
-      <header>
-        <a class="brand" href="./" aria-label="Street Football home">
-          <span class="brand-mark" aria-hidden="true">SF</span>
-          Street Football
-        </a>
-        <a class="source-link" href="https://github.com/joellimrl/street-football">View source <span aria-hidden="true">↗</span></a>
-      </header>
-      <main>
-        <section class="intro" aria-labelledby="page-title">
-          <p class="eyebrow">Premier League · On your schedule</p>
-          <h1 id="page-title">The match can wait.<br>The score can too.</h1>
-          <p class="lead">Match times in your time zone. Official highlights when you're ready. Scores revealed on your terms.</p>
-          <span class="status"><span aria-hidden="true"></span>Coming soon</span>
-        </section>
-        <section class="schedule" aria-labelledby="schedule-title">
-          <div class="section-heading">
-            <h2 id="schedule-title">Your matchday</h2>
-            <span>Singapore · UTC+8</span>
-          </div>
-          <div class="empty-state">
-            <svg class="pitch" viewBox="0 0 160 104" fill="none" aria-hidden="true">
-              <rect x="2" y="2" width="156" height="100" rx="4"/>
-              <path d="M80 2v100M2 28h24v48H2m156-48h-24v48h24"/>
-              <circle cx="80" cy="52" r="18"/>
-              <circle cx="80" cy="52" r="2" fill="currentColor" stroke="none"/>
-            </svg>
-            <h3>The schedule is on its way.</h3>
-            <p>This is the first version of Street Football. Live fixtures and highlight links aren't available yet.</p>
-          </div>
-          <div class="planned-features" aria-label="Planned features">
-            <p><span>01</span>Local match times</p>
-            <p><span>02</span>Scores hidden by default</p>
-            <p><span>03</span>Official highlight links</p>
-          </div>
-        </section>
-      </main>
-      <footer>
-        <p>An independent, free, open-source project.</p>
-        <p>Planned fixture source: <a href="https://www.football-data.org/">football-data.org</a>. No match data published yet.</p>
-      </footer>
-    </div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Premier League match times and official club highlights. Keep scores hidden until you choose to reveal them.">
+  <meta name="theme-color" content="#173b31">
+  <title>Street Football — Fixtures &amp; highlights</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./view-model.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#matches">Skip to matches</a>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">SF</span> Street Football</a>
+      <a class="source-link" href="https://github.com/joellimrl/street-football">Open source <span aria-hidden="true">↗</span></a>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div><p class="eyebrow">Premier League <span id="season"></span></p><h1 id="page-title">Your matchday.</h1><p class="lead">Match times. Official highlights. Scores on your terms.</p></div>
+        <button class="spoiler-toggle" id="hide-scores" type="button" aria-pressed="false"><span aria-hidden="true">◉</span> Show all scores</button>
+      </section>
+      <nav class="views" aria-label="Match views">
+        <button type="button" data-view="upcoming" aria-pressed="true">Upcoming</button>
+        <button type="button" data-view="recent" aria-pressed="false">Recent</button>
+        <button type="button" data-view="highlights" aria-pressed="false">Highlights</button>
+        <button type="button" data-view="all" aria-pressed="false">Full season</button>
+      </nav>
+      <section class="filters" aria-label="Filter matches">
+        <label>Team<select id="team"><option value="all">All teams</option></select></label>
+        <label>Gameweek<select id="matchday"><option value="all">All gameweeks</option></select></label>
+        <label class="timezone-label">Time zone<select id="timezone"><option value="Asia/Singapore">Singapore</option><option value="Europe/London">United Kingdom</option><option value="UTC">UTC</option></select></label>
+        <button type="button" class="favorite-filter" id="favorites-only" aria-pressed="false">☆ My teams</button>
+      </section>
+      <div class="match-summary"><p id="result-count" aria-live="polite">Loading fixtures…</p><span id="zone-label">Times in Singapore</span></div>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <section id="matches" aria-label="Fixtures" aria-busy="true" tabindex="-1"><div class="empty-state"><span class="pitch-icon" aria-hidden="true">＋</span><h2>Getting the fixtures…</h2></div></section>
+      <button id="load-more" class="load-more" type="button" hidden>Show more matches</button>
+      <section class="freshness" aria-label="Data freshness"><p id="fixtures-freshness">Fixtures: checking…</p><p id="highlights-freshness">Highlights: checking…</p><button id="refresh" type="button">Refresh page data ↻</button></section>
+      <noscript><p class="notice">Enable JavaScript to view fixtures and reveal scores.</p></noscript>
+    </main>
+    <footer><p>Independent. Free. Made for matchday.<br><span>Football data provided by the <a href="https://www.football-data.org/">Football-Data.org API</a>.</span></p><p><a href="./privacy.html">Privacy &amp; terms</a><br><span>Highlight videos are hosted on YouTube.</span></p></footer>
+  </div>
+</body>
 </html>
