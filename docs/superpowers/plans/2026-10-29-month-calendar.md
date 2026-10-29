@@ -44,5 +44,18 @@ cells; `selectCalendarDate(days, today)` returns the initial selected YYYY-MM-DD
 - [x] Run `node --test tests/*.test.js`, syntax checks for edited JS, and
   `git diff --check`. Expect all passing. Inspect desktop/mobile in the browser;
   exercise navigation, filters, score controls, highlights and empty dates.
-- [ ] Commit, obtain one fresh review, fix substantive findings, publish through
+- [x] Commit, obtain one fresh review, fix substantive findings, publish through
   the existing Pages workflow and verify the deployed calendar.
+
+## Result
+
+Published code revision `a39449a` through successful Actions run `40887900241`.
+All 31 offline tests and edited-JavaScript syntax checks pass. A fresh reviewer
+found no issues. Browser checks covered desktop, 390px/320px layouts, navigation,
+filters, keyboard focus, empty dates/months, score controls and direct highlights.
+The live calendar displayed 36 October fixtures and month navigation worked.
+
+Provider accuracy continues to depend on the existing snapshot/collector, which
+was unchanged; upstream mistakes would appear in both views. Browser and keyboard
+QA was performed, but a screen reader was not independently tested. No minor
+review findings were deferred.
