@@ -95,3 +95,22 @@ test('YouTube diagnostics identify failed clubs and stages without logging provi
   ]);
   assert.ok(!JSON.stringify(reports).includes('private-key'));
 });
+
+test('YouTube resolves current handles separately from legacy usernames', async () => {
+  const lookedUp = [];
+  const providers = createProviders({ youtubeKey: 'test-only',
+    channels: [{ tla: 'ARS', handle: '@arsenal' }, { tla: 'CHE', handle: '@chelseafc' }], request: async raw => {
+      const url = new URL(raw);
+      if (url.pathname.endsWith('/channels')) {
+        const handle = url.searchParams.get('forHandle');
+        assert.ok(['@arsenal', '@chelseafc'].includes(handle));
+        assert.equal(url.searchParams.has('forUsername'), false); assert.equal(url.searchParams.has('id'), false);
+        lookedUp.push(handle);
+        return { items: [{ id: 'UCtest', contentDetails: { relatedPlaylists: { uploads: 'UUtest' } } }] };
+      }
+      assert.ok(url.pathname.endsWith('/playlistItems'));
+      return { items: [] };
+    } });
+  const result = await providers.highlightsProvider([fixture()], NOW);
+  assert.equal(result.healthy, true); assert.deepEqual(lookedUp, ['@arsenal', '@chelseafc']);
+});

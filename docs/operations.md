@@ -48,6 +48,10 @@ explicit bootstrap. This is expected and preserves the prior deployment.
 - Unknown club channel configurations, partial channel failures and missing
   credentials are visible as degraded sources. Fix the mapping in
   `collector/channels.json` after verifying the club's official channel.
+  `handle` uses YouTube's `forHandle` lookup; `user` means a legacy username,
+  which is not interchangeable with a modern handle. Workflow diagnostics
+  identify the club, request stage and HTTP status without printing credentials
+  or upstream response bodies.
 - Keep matches pending across runs. No Telegram delivery state or MongoDB state
   affects this collector. No historical pre-launch highlight backfill is promised.
 

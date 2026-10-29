@@ -37,7 +37,7 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
       try {
         const config = channels.find(c => c.tla === team.tla);
         if (!config) throw new Error('Club channel not configured');
-        const data = await api('channels', { part: 'contentDetails', id: config.channelId, forUsername: config.user });
+        const data = await api('channels', { part: 'contentDetails', id: config.channelId, forUsername: config.user, forHandle: config.handle });
         const channel = data.items[0];
         if (!channel?.id || !channel.contentDetails?.relatedPlaylists?.uploads || (config.channelId && channel.id !== config.channelId)) throw new Error('Unknown club channel');
         channelTeams.set(channel.id, team.id);
