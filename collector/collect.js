@@ -1,6 +1,6 @@
 const { DAY, validateSnapshot, validateVideo, normalizeFixtures, emptySnapshot } = require('./model');
 const { matchVideos } = require('./matching');
-async function collect({ previous, fixturesProvider, highlightsProvider, now = new Date().toISOString() }) {
+async function collect({ previous, fixturesProvider, highlightsProvider, report = () => {}, now = new Date().toISOString() }) {
   const snapshot = structuredClone(validateSnapshot(previous || emptySnapshot(now)));
   snapshot.generatedAt = now;
   const stamp = (name, success, configured = true) => {
@@ -8,9 +8,12 @@ async function collect({ previous, fixturesProvider, highlightsProvider, now = n
     snapshot.sources[name].lastAttemptAt = now;
     if (success) snapshot.sources[name].lastSuccessAt = now;
   };
+  let fixtureStage = 'fixtures_fetch';
   try {
     if (!fixturesProvider) throw new Error('Not configured');
-    const fresh = normalizeFixtures(await fixturesProvider());
+    const payload = await fixturesProvider();
+    fixtureStage = 'fixtures_validate';
+    const fresh = normalizeFixtures(payload);
     const sameSeason = fresh.season.id === snapshot.season?.id;
     const prior = new Map(sameSeason ? snapshot.fixtures.map(m => [m.id, m]) : []);
     for (const match of fresh.fixtures) {
@@ -24,7 +27,11 @@ async function collect({ previous, fixturesProvider, highlightsProvider, now = n
     snapshot.season = fresh.season;
     snapshot.fixtures = [...prior.values()];
     stamp('fixtures', true);
-  } catch { stamp('fixtures', false, Boolean(fixturesProvider)); }
+  } catch (error) {
+    stamp('fixtures', false, Boolean(fixturesProvider));
+    if (fixturesProvider) report({ stage: fixtureStage, team: null, reason: 'Request or response failed',
+      httpStatus: Number.isInteger(error?.status) && error.status >= 100 && error.status <= 599 ? error.status : null });
+  }
   // Expiry applies even on source failure. Metadata never lives indefinitely.
   for (const match of snapshot.fixtures) {
     match.highlights = match.highlights.filter(v => Date.parse(now) - Date.parse(v.checkedAt) < 29 * DAY);

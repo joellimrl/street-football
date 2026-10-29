@@ -4,6 +4,7 @@ const { NOW, fixture, video, snapshot, payload } = require('./fixtures');
 const { validateSnapshot, normalizeFixtures } = require('../collector/model');
 const { matchVideos } = require('../collector/matching');
 const { collect } = require('../collector/collect');
+const { createProviders } = require('../collector/providers');
 const noVideos = async () => ({ videos: [], removedIds: [], failedTeamIds: [], healthy: true });
 
 test('untrusted snapshots reject invalid URLs, scores, extra private fields and duplicate IDs', () => {
@@ -42,6 +43,21 @@ test('upstream failures preserve existing data and report stale source separatel
   assert.equal(result.snapshot.sources.fixtures.lastSuccessAt, NOW);
   assert.equal(result.degraded, true);
   assert.ok(!JSON.stringify(result).includes('secret'));
+});
+
+test('fixture diagnostics distinguish HTTP rejection from malformed data without exposing credentials', async () => {
+  const reports = [];
+  for (const request of [async () => { const error = new Error('secret-token upstream body'); error.status = 403; throw error; },
+    async () => ({ matches: [] })]) {
+    const providers = createProviders({ footballToken: 'secret-token', request, report: event => reports.push(event) });
+    const result = await collect({ previous: snapshot(), now: NOW, ...providers, highlightsProvider: noVideos });
+    assert.equal(result.degraded, true); assert.equal(result.snapshot.fixtures.length, 1);
+  }
+  assert.deepEqual(reports, [
+    { stage: 'fixtures_fetch', team: null, reason: 'Request or response failed', httpStatus: 403 },
+    { stage: 'fixtures_validate', team: null, reason: 'Request or response failed', httpStatus: null }
+  ]);
+  assert.ok(!JSON.stringify(reports).includes('secret-token'));
 });
 test('season changes and rescheduling clear obsolete highlights', async () => {
   const previous = snapshot({ fixtures: [fixture({ highlights: [video()] })] });

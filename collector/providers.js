@@ -81,6 +81,6 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
     }
     return { videos, removedIds, failedTeamIds: [...failedTeamIds], checkedFixtureIds: due.map(m => m.id), healthy };
   } : undefined;
-  return { fixturesProvider, highlightsProvider };
+  return { fixturesProvider, highlightsProvider, report };
 }
 module.exports = { createProviders };

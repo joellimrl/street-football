@@ -27,7 +27,7 @@ async function preparePublication({ snapshotUrl = 'https://joellimrl.github.io/s
 if (require.main === module) {
   preparePublication({ snapshotUrl: process.env.SNAPSHOT_URL, bootstrap: process.env.BOOTSTRAP === 'true',
     providers: createProviders({ footballToken: process.env.FOOTBALL_DATA_API_TOKEN, youtubeKey: process.env.YOUTUBE_API_KEY,
-      report: event => console.warn(`[youtube] ${JSON.stringify(event)}`) })
+      report: event => console.warn(`[collector] ${JSON.stringify(event)}`) })
   }).then(async result => {
     const states = Object.entries(result.snapshot.sources).map(([name, source]) => `${name}: ${source.status}`).join('; ');
     console.log(`[publish] ${result.snapshot.fixtures.length} fixtures; ${states}`);
