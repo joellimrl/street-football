@@ -5,7 +5,8 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('street-football-preferences') || '{}') || {}; } catch { /* Storage is optional. */ }
   const state = { view: 'upcoming', teamId: 'all', matchday: 'all', favoritesOnly: false,
-    favorites: Array.isArray(saved.favorites) ? saved.favorites.filter(id => typeof id === 'string') : [], timezone: V.validTimezone(saved.timezone), limit: 40 };
+    favorites: Array.isArray(saved.favorites) ? saved.favorites.filter(id => typeof id === 'string') : [], timezone: V.validTimezone(saved.timezone), limit: 40,
+    calendarMonth: null, calendarDay: null };
   const scoreStatuses = ['FINISHED', 'IN_PLAY', 'PAUSED', 'AWARDED'];
   let data; let showAllScores = true; const scoreOverrides = new Map();
   const scoreVisible = match => scoreOverrides.get(match.id) ?? showAllScores;
@@ -82,23 +83,71 @@
     } else row.append(el('span', match.status === 'FINISHED' ? 'Highlights not available yet' : 'Highlights after the match', 'highlights-action'));
     return row;
   }
+  function calendarDateLabel(date, options = { weekday: 'long', day: 'numeric', month: 'long' }) {
+    // Calendar keys already represent local dates; do not shift them a second time.
+    return new Intl.DateTimeFormat('en-GB', { ...options, timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+  }
+  function renderCalendar(fixtures) {
+    const today = V.dateKey(new Date().toISOString(), state.timezone);
+    state.calendarMonth ||= today.slice(0, 7);
+    const days = V.monthGrid(fixtures, state.calendarMonth, state.timezone);
+    if (!days.some(day => day.inMonth && day.date === state.calendarDay)) state.calendarDay = V.selectCalendarDate(days, today);
+    const monthLabel = calendarDateLabel(`${state.calendarMonth}-01`, { month: 'long', year: 'numeric' });
+    $('calendar-title').textContent = monthLabel;
+    const count = days.reduce((total, day) => total + day.fixtures.length, 0);
+    $('result-count').textContent = `${count} ${count === 1 ? 'match' : 'matches'} in ${monthLabel}`;
+    $('calendar-grid').replaceChildren();
+    for (const day of days) {
+      const cell = el(day.inMonth ? 'button' : 'div', undefined, `calendar-day${day.inMonth ? '' : ' outside-month'}`);
+      cell.append(el('span', String(Number(day.date.slice(-2))), 'calendar-date'));
+      if (!day.inMonth) {
+        cell.setAttribute('aria-hidden', 'true'); $('calendar-grid').append(cell); continue;
+      }
+      cell.type = 'button'; cell.dataset.calendarDate = day.date;
+      cell.setAttribute('aria-pressed', String(day.date === state.calendarDay));
+      cell.setAttribute('aria-label', `${calendarDateLabel(day.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, ${day.fixtures.length} ${day.fixtures.length === 1 ? 'match' : 'matches'}`);
+      if (day.date === today) cell.setAttribute('aria-current', 'date');
+      if (day.fixtures.length) {
+        const countLabel = el('span', `${day.fixtures.length} ${day.fixtures.length === 1 ? 'match' : 'matches'}`, 'calendar-count');
+        countLabel.setAttribute('aria-hidden', 'true'); cell.append(countLabel);
+        const events = el('span', undefined, 'calendar-events'); events.setAttribute('aria-hidden', 'true');
+        for (const match of day.fixtures.slice(0, 3)) {
+          const item = el('span', undefined, 'calendar-event');
+          const special = { POSTPONED: 'Postponed', CANCELLED: 'Cancelled', SUSPENDED: 'Suspended', SCHEDULED: 'Time TBC', AWARDED: 'Awarded' };
+          item.append(el('span', special[match.status] || dateFormat(match.utcDate, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }), 'calendar-time'),
+            el('span', `${match.home.tla} · ${match.away.tla}`, 'calendar-teams'));
+          events.append(item);
+        }
+        if (day.fixtures.length > 3) events.append(el('span', `+${day.fixtures.length - 3} more`, 'calendar-more'));
+        cell.append(events);
+      }
+      cell.addEventListener('click', () => {
+        state.calendarDay = day.date; render();
+        document.querySelector(`[data-calendar-date="${day.date}"]`)?.focus({ preventScroll: true });
+      });
+      $('calendar-grid').append(cell);
+    }
+    return days.find(day => day.date === state.calendarDay)?.fixtures || [];
+  }
   function render() {
     if (!data) return;
     scoreControl();
     $('favorites-only').setAttribute('aria-pressed', String(state.favoritesOnly));
     $('favorites-only').textContent = `${state.favoritesOnly ? '★' : '☆'} My teams`;
     for (const button of document.querySelectorAll('[data-view]')) button.setAttribute('aria-pressed', String(button.dataset.view === state.view));
-    const matches = V.selectFixtures(data.fixtures, state); $('matches').replaceChildren();
-    $('result-count').textContent = `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+    const calendar = state.view === 'calendar'; $('calendar-panel').hidden = !calendar;
+    const filtered = V.selectFixtures(data.fixtures, state);
+    const matches = calendar ? renderCalendar(filtered) : filtered; $('matches').replaceChildren();
+    if (!calendar) $('result-count').textContent = `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
     $('zone-label').textContent = `Times in ${state.timezone.replaceAll('_', ' ')}`;
-    $('load-more').hidden = matches.length <= state.limit;
+    $('load-more').hidden = calendar || matches.length <= state.limit;
     if (!data.fixtures.length) {
       empty('The first fixtures are on their way.', 'Match times, scores and available highlights will appear after the first successful update.');
       $('result-count').textContent = 'Awaiting first update'; return;
     }
-    if (!matches.length) { empty('No matches in this view.', state.favoritesOnly && !state.favorites.length ? 'Star a team in the fixture list, then use My teams to follow them.' : 'Try another team, gameweek or match view.'); return; }
+    if (!matches.length) { empty(calendar ? `No matches on ${calendarDateLabel(state.calendarDay)}.` : 'No matches in this view.', state.favoritesOnly && !state.favorites.length ? 'Star a team in the fixture list, then use My teams to follow them.' : calendar ? 'Select another day or change your filters.' : 'Try another team, gameweek or match view.'); return; }
     let currentDay; let group;
-    for (const match of matches.slice(0, state.limit)) {
+    for (const match of calendar ? matches : matches.slice(0, state.limit)) {
       const key = V.dateKey(match.utcDate, state.timezone);
       if (key !== currentDay) {
         currentDay = key; group = el('section', undefined, 'day-group');
@@ -149,10 +198,14 @@
   if (![...$('timezone').options].some(option => option.value === state.timezone)) $('timezone').append(new Option(state.timezone, state.timezone));
   $('timezone').value = state.timezone;
   for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => { state.view = button.dataset.view; state.limit = 40; render(); });
-  $('team').addEventListener('change', event => { state.teamId = event.target.value; state.limit = 40; render(); });
-  $('matchday').addEventListener('change', event => { state.matchday = event.target.value; state.limit = 40; render(); });
-  $('timezone').addEventListener('change', event => { state.timezone = V.validTimezone(event.target.value); save(); if (data) freshness(); render(); });
-  $('favorites-only').addEventListener('click', () => { state.favoritesOnly = !state.favoritesOnly; state.limit = 40; render(); });
+  $('team').addEventListener('change', event => { state.teamId = event.target.value; state.limit = 40; state.calendarDay = null; render(); });
+  $('matchday').addEventListener('change', event => { state.matchday = event.target.value; state.limit = 40; state.calendarDay = null; render(); });
+  $('timezone').addEventListener('change', event => { state.timezone = V.validTimezone(event.target.value); state.calendarDay = null; save(); if (data) freshness(); render(); });
+  $('favorites-only').addEventListener('click', () => { state.favoritesOnly = !state.favoritesOnly; state.limit = 40; state.calendarDay = null; render(); });
+  for (const [id, offset] of [['previous-month', -1], ['next-month', 1]]) {
+    $(id).addEventListener('click', () => { state.calendarMonth = V.shiftMonth(state.calendarMonth, offset); state.calendarDay = null; render(); });
+  }
+  $('current-month').addEventListener('click', () => { state.calendarMonth = V.dateKey(new Date().toISOString(), state.timezone).slice(0, 7); state.calendarDay = null; render(); });
   $('hide-scores').addEventListener('click', () => { showAllScores = !anyScoresVisible(); scoreOverrides.clear(); render(); });
   $('load-more').addEventListener('click', () => { state.limit += 40; render(); });
   $('refresh').addEventListener('click', load);

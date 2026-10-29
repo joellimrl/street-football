@@ -24,6 +24,7 @@
       </section>
       <nav class="views" aria-label="Match views">
         <button type="button" data-view="upcoming" aria-pressed="true">Upcoming</button>
+        <button type="button" data-view="calendar" aria-pressed="false">Calendar</button>
         <button type="button" data-view="recent" aria-pressed="false">Recent</button>
         <button type="button" data-view="highlights" aria-pressed="false">Highlights</button>
         <button type="button" data-view="all" aria-pressed="false">Full season</button>
@@ -36,6 +37,19 @@
       </section>
       <div class="match-summary"><p id="result-count" aria-live="polite">Loading fixtures…</p><span id="zone-label">Times in Singapore</span></div>
       <div id="notice" class="notice" role="status" hidden></div>
+      <section id="calendar-panel" class="calendar-panel" aria-labelledby="calendar-title" hidden>
+        <div class="calendar-navigation">
+          <h2 id="calendar-title" aria-live="polite"></h2>
+          <div class="calendar-controls">
+            <button id="previous-month" type="button" aria-label="Previous month">←</button>
+            <button id="current-month" type="button">This month</button>
+            <button id="next-month" type="button" aria-label="Next month">→</button>
+          </div>
+        </div>
+        <div class="calendar-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        <div id="calendar-grid" class="calendar-grid" role="group" aria-labelledby="calendar-title"></div>
+        <p class="calendar-hint">Select a day to see match times, scores and highlights below.</p>
+      </section>
       <section id="matches" aria-label="Fixtures" aria-busy="true" tabindex="-1"><div class="empty-state"><span class="pitch-icon" aria-hidden="true">＋</span><h2>Getting the fixtures…</h2></div></section>
       <button id="load-more" class="load-more" type="button" hidden>Show more matches</button>
       <section class="freshness" aria-label="Data freshness"><p id="fixtures-freshness">Fixtures: checking…</p><p id="highlights-freshness">Highlights: checking…</p><button id="refresh" type="button">Refresh page data ↻</button></section>

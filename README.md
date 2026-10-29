@@ -33,6 +33,9 @@ requests or collector executions.
 ## Features
 
 - Full-season fixtures, with an upcoming-match view and team/gameweek filters.
+- A monthly Calendar view: navigate months and select a day for its match cards.
+  Dates follow the selected time zone; team, gameweek and favourite-team filters
+  apply. On phones, day cells show match counts with full details below the grid.
 - Asia/Singapore display time by default; UTC timestamps in stored data.
 - Scores shown by default, with optional per-match and global hiding.
 - The first verified official highlight shown directly, with more available on expansion.

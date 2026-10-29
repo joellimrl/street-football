@@ -32,7 +32,35 @@
     });
     return result.sort((a, b) => (view === 'recent' || view === 'highlights' ? -1 : 1) * a.utcDate.localeCompare(b.utcDate));
   }
-  const api = { validTimezone, dateKey, scoreText, safeHighlights, selectFixtures };
+  function shiftMonth(month, offset) {
+    const date = new Date(`${month}-01T00:00:00Z`);
+    date.setUTCMonth(date.getUTCMonth() + offset);
+    return date.toISOString().slice(0, 7);
+  }
+  function monthGrid(fixtures, month, timezone) {
+    const first = new Date(`${month}-01T00:00:00Z`);
+    const leading = (first.getUTCDay() + 6) % 7;
+    const next = Date.parse(`${shiftMonth(month, 1)}-01T00:00:00Z`);
+    const length = Math.round((next - first.getTime()) / DAY);
+    const byDate = new Map();
+    for (const match of fixtures) {
+      const date = dateKey(match.utcDate, timezone);
+      if (!date.startsWith(`${month}-`)) continue;
+      if (!byDate.has(date)) byDate.set(date, []);
+      byDate.get(date).push(match);
+    }
+    return Array.from({ length: Math.ceil((leading + length) / 7) * 7 }, (_, index) => {
+      const date = new Date(first.getTime() + (index - leading) * DAY).toISOString().slice(0, 10);
+      return { date, inMonth: date.startsWith(`${month}-`),
+        fixtures: (byDate.get(date) || []).sort((a, b) => a.utcDate.localeCompare(b.utcDate)) };
+    });
+  }
+  function selectCalendarDate(days, today) {
+    const matching = days.filter(day => day.inMonth && day.fixtures.length);
+    return (matching.find(day => day.date >= today) || matching.at(-1) ||
+      days.find(day => day.inMonth && day.date === today) || days.find(day => day.inMonth))?.date || null;
+  }
+  const api = { validTimezone, dateKey, scoreText, safeHighlights, selectFixtures, shiftMonth, monthGrid, selectCalendarDate };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.FootballView = api;
 })(typeof globalThis === 'object' ? globalThis : this);
