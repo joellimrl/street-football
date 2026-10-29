@@ -79,3 +79,19 @@ test('YouTube paginates uploads, confirms video channel, and reports per-club fa
   assert.equal(result.videos[0].teamId, '57'); assert.equal(result.healthy, false);
   assert.deepEqual(result.failedTeamIds, ['61']); assert.ok(routes.some(route => route.endsWith('second')));
 });
+
+test('YouTube diagnostics identify failed clubs and stages without logging provider errors or credentials', async () => {
+  const reports = [];
+  const providers = createProviders({ youtubeKey: 'private-key', report: event => reports.push(event),
+    channels: [{ tla: 'ARS', user: 'arsenal' }, { tla: 'CHE', user: 'chelseafc' }], request: async raw => {
+      if (new URL(raw).searchParams.get('forUsername') === 'arsenal') return { items: [] };
+      const error = new Error('private-key in upstream response'); error.status = 403; throw error;
+    } });
+  const result = await providers.highlightsProvider([fixture()], NOW);
+  assert.equal(result.healthy, false);
+  assert.deepEqual(reports, [
+    { stage: 'channels', team: 'ARS', reason: 'Unknown club channel', httpStatus: null },
+    { stage: 'channels', team: 'CHE', reason: 'Request or response failed', httpStatus: 403 }
+  ]);
+  assert.ok(!JSON.stringify(reports).includes('private-key'));
+});

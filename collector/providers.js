@@ -3,7 +3,10 @@ const { DAY, validateVideo } = require('./model');
 const { isHighlight } = require('./matching');
 const catalogue = require('./channels.json');
 
-function createProviders({ footballToken, youtubeKey, request = requestJson, channels = catalogue } = {}) {
+function createProviders({ footballToken, youtubeKey, request = requestJson, channels = catalogue, report = () => {} } = {}) {
+  const failure = (stage, team, error) => report({ stage, team,
+    reason: ['Club channel not configured', 'Unknown club channel', 'YouTube request budget reached', 'Upload page limit reached'].includes(error.message) ? error.message : 'Request or response failed',
+    httpStatus: Number.isInteger(error.status) && error.status >= 100 && error.status <= 599 ? error.status : null });
   const fixturesProvider = footballToken ? () => request('https://api.football-data.org/v4/competitions/PL/matches', {
     headers: { 'X-Auth-Token': footballToken }
   }) : undefined;
@@ -30,6 +33,7 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
         (Date.parse(now) - Date.parse(m.utcDate) > 2 * DAY ? 6 * 3600000 : 25 * 60000)));
     const teams = new Map(due.flatMap(m => [[m.home.id, m.home], [m.away.id, m.away]]));
     for (const team of teams.values()) {
+      let stage = 'channels';
       try {
         const config = channels.find(c => c.tla === team.tla);
         if (!config) throw new Error('Club channel not configured');
@@ -37,6 +41,7 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
         const channel = data.items[0];
         if (!channel?.id || !channel.contentDetails?.relatedPlaylists?.uploads || (config.channelId && channel.id !== config.channelId)) throw new Error('Unknown club channel');
         channelTeams.set(channel.id, team.id);
+        stage = 'playlistItems';
         let pageToken;
         for (let page = 0; page < 3; page++) {
           const feed = await api('playlistItems', { part: 'snippet,contentDetails', playlistId: channel.contentDetails.relatedPlaylists.uploads, maxResults: '50', pageToken });
@@ -46,10 +51,10 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
           }
           const reachedOld = feed.items.some(item => Date.parse(item.contentDetails?.videoPublishedAt) < Date.parse(now) - 9 * DAY);
           if (!feed.nextPageToken || reachedOld) break;
-          if (page === 2) { healthy = false; failedTeamIds.add(team.id); }
+          if (page === 2) { healthy = false; failedTeamIds.add(team.id); failure(stage, team.tla, new Error('Upload page limit reached')); }
           pageToken = feed.nextPageToken;
         }
-      } catch { healthy = false; failedTeamIds.add(team.id); }
+      } catch (error) { healthy = false; failedTeamIds.add(team.id); failure(stage, team.tla, error); }
     }
     const allIds = [...ids];
     for (let offset = 0; offset < allIds.length; offset += 50) {
@@ -72,7 +77,7 @@ function createProviders({ footballToken, youtubeKey, request = requestJson, cha
           validateVideo(video); videos.push(video);
         }
         for (const videoId of batch) if (!returned.has(videoId) && oldVideos.has(videoId)) removedIds.push(videoId);
-      } catch { healthy = false; for (const team of teams.values()) failedTeamIds.add(team.id); }
+      } catch (error) { healthy = false; for (const team of teams.values()) failedTeamIds.add(team.id); failure('videos', null, error); }
     }
     return { videos, removedIds, failedTeamIds: [...failedTeamIds], checkedFixtureIds: due.map(m => m.id), healthy };
   } : undefined;
