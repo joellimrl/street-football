@@ -58,7 +58,7 @@ Interfaces: view model consumes schema v1; exposes selectFixtures, dateKey, scor
 - [x] Once secrets exist, perform the first live collection, inspect results, then advise enabling cron-job.org. Leave Telegram cutover until matchweek validation.
 
 Progress: Tasks 1–4 are complete. Review findings and live channel lookup errors
-were reproduced and fixed; the offline suite has 25 passing tests, with syntax
+were reproduced and fixed; the offline suite has 26 passing tests, with syntax
 checks passing. Desktop/mobile browser interactions passed locally. On 29 October
 2026, live collection published all 380 fixtures and 28 highlight links with both
 sources healthy. A subsequent normal workflow dispatch preserved those links and
@@ -67,14 +67,21 @@ published a newer snapshot (2026-10-29T11:37:18.011Z).
 Release evidence:
 - [Successful release](https://github.com/joellimrl/street-football/actions/runs/40866630734)
 - [Successful normal dispatch](https://github.com/joellimrl/street-football/actions/runs/40866769429)
+- [Successful refresh after fixture diagnostics](https://github.com/joellimrl/street-football/actions/runs/40867534869)
 - [Live site](https://joellimrl.github.io/street-football/)
 
 Remaining operational steps: enable the saved cron-job.org job if still disabled
 (7,37 * * * *, Asia/Singapore; body {"ref":"main"}), keep failure notifications
 enabled, and compare a full matchweek before disabling the old Telegram feed.
-The previous browser QA workspace no longer existed at release verification;
-live assets and snapshot were verified over HTTP, with a new browser pass
-awaiting permission to open a replacement workspace.
+Live desktop and 390px mobile browser checks also passed in a replacement
+workspace approved by the user: Singapore default, concealed scores, individual
+reveal/global hide, highlight disclosure, YouTube destinations and no horizontal
+overflow. The refreshed browser showed both sources healthy. Workspace closed.
+
+A subsequent fixture request failed once and retained existing data. The next
+refresh succeeded without credential changes; the original cause was not
+reproduced. Added regression-tested, secret-safe fixture fetch/validation
+diagnostics to identify any recurrence.
 
 ## Execution decisions
 
