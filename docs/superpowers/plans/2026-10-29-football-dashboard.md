@@ -28,39 +28,53 @@
 
 Files: collector/model.js, collector/matching.js, collector/collect.js, tests/collector.test.js.
 Interfaces: validateSnapshot(snapshot); normalizeFixtures(payload); matchVideos(fixtures,videos,now); collect({previous,fixturesProvider,highlightsProvider,now}) returns {snapshot,degraded}.
-- [ ] Write/run failing offline tests for bad state, delayed uploads (7 days), wrong teams/channels/dates, duplicates, youth videos, outages, season change, rescheduling, expired metadata and partial failures.
-- [ ] Implement strict public-data validation, stable-ID merge, date/channel matching and recovery rules.
-- [ ] Run node --test tests/collector.test.js and node --check changed JS; expect pass; commit.
+- [x] Write/run failing offline tests for bad state, delayed uploads (7 days), wrong teams/channels/dates, duplicates, youth videos, outages, season change, rescheduling, expired metadata and partial failures.
+- [x] Implement strict public-data validation, stable-ID merge, date/channel matching and recovery rules.
+- [x] Run node --test tests/collector.test.js and node --check changed JS; expect pass; commit.
 
 ### Task 2: Providers and publication workflow
 
 Files: collector/http.js, collector/providers.js, collector/channels.json, scripts/publish.js, .github/workflows/pages.yml, tests/publish.test.js, package.json.
 Interfaces: requestJson(url,options); createProviders({footballToken,youtubeKey,request}); preparePublication({snapshotUrl,bootstrap,outputDir,providers,request,now}).
-- [ ] Write/run failing tests for HTTP retries/Retry-After, malformed data, safe errors, prior-state 404/500, missing credentials, preserved stale data and atomic output.
-- [ ] Fetch current-season fixtures; scan known club uploads with pagination; refresh known video IDs daily; bound request quota, time and response size.
-- [ ] One dispatch/push workflow validates/tests, prepares dist, then deploys; no schedule event, no provider data in Git, no secret diagnostics in output. bootstrap boolean defaults false.
-- [ ] Run node --test and syntax checks; expect pass; commit.
+- [x] Write/run failing tests for HTTP retries/Retry-After, malformed data, safe errors, prior-state 404/500, missing credentials, preserved stale data and atomic output.
+- [x] Fetch current-season fixtures; scan known club uploads with pagination; refresh known video IDs daily; bound request quota, time and response size.
+- [x] One dispatch/push workflow validates/tests, prepares dist, then deploys; no schedule event, no provider data in Git, no secret diagnostics in output. bootstrap boolean defaults false.
+- [x] Run node --test and syntax checks; expect pass; commit.
 
 ### Task 3: Fixture dashboard
 
 Files: public/index.html, public/styles.css, public/app.js, public/view-model.js, public/privacy.html, tests/view-model.test.js, scripts/preview.js.
 Interfaces: view model consumes schema v1; exposes selectFixtures, dateKey, scoreText, safeHighlights.
-- [ ] Write/run failing tests for time zones/DST, filters, null scores, concealed scores, stale highlights and invalid URLs.
-- [ ] Build upcoming/recent/all views, team/gameweek filters, local favorites, time-zone control, per-match scores and explicit video-preview disclosures. Render provider text as text, never HTML.
-- [ ] Include loading/empty/error/stale states, attribution and privacy/terms links; no fake data on production.
-- [ ] Run offline suite; inspect actual desktop/mobile UI and interactions with synthetic data served only locally; commit.
+- [x] Write/run failing tests for time zones/DST, filters, null scores, concealed scores, stale highlights and invalid URLs.
+- [x] Build upcoming/recent/all views, team/gameweek filters, local favorites, time-zone control, per-match scores and explicit video-preview disclosures. Render provider text as text, never HTML.
+- [x] Include loading/empty/error/stale states, attribution and privacy/terms links; no fake data on production.
+- [x] Run offline suite; inspect actual desktop/mobile UI and interactions with synthetic data served only locally; commit.
 
 ### Task 4: Review and release
 
-- [ ] Fresh whole-branch review; fix substantive findings with regression tests.
-- [ ] Update setup/architecture documentation and source status.
-- [ ] Publish the dashboard with an explicit bootstrap; if credentials are absent, publish a truthful awaiting-data state, with normal dispatch blocked from pretending collection succeeded.
-- [ ] Once secrets exist, perform the first live collection, inspect results, then advise enabling cron-job.org. Leave Telegram cutover until matchweek validation.
+- [x] Fresh whole-branch review; fix substantive findings with regression tests.
+- [x] Update setup/architecture documentation and source status.
+- [x] Publish the dashboard with an explicit bootstrap; if credentials are absent, publish a truthful awaiting-data state, with normal dispatch blocked from pretending collection succeeded.
+- [x] Once secrets exist, perform the first live collection, inspect results, then advise enabling cron-job.org. Leave Telegram cutover until matchweek validation.
 
-Progress: Tasks 1–3 are implemented and verified. The final review found two
-matching defects; regression tests reproduced both and fixes brought the
-offline suite to 23 passing tests. Desktop/mobile browser interactions passed.
-Live release verification follows.
+Progress: Tasks 1–4 are complete. Review findings and live channel lookup errors
+were reproduced and fixed; the offline suite has 25 passing tests, with syntax
+checks passing. Desktop/mobile browser interactions passed locally. On 29 October
+2026, live collection published all 380 fixtures and 28 highlight links with both
+sources healthy. A subsequent normal workflow dispatch preserved those links and
+published a newer snapshot (2026-10-29T11:37:18.011Z).
+
+Release evidence:
+- [Successful release](https://github.com/joellimrl/street-football/actions/runs/40866630734)
+- [Successful normal dispatch](https://github.com/joellimrl/street-football/actions/runs/40866769429)
+- [Live site](https://joellimrl.github.io/street-football/)
+
+Remaining operational steps: enable the saved cron-job.org job if still disabled
+(7,37 * * * *, Asia/Singapore; body {"ref":"main"}), keep failure notifications
+enabled, and compare a full matchweek before disabling the old Telegram feed.
+The previous browser QA workspace no longer existed at release verification;
+live assets and snapshot were verified over HTTP, with a new browser pass
+awaiting permission to open a replacement workspace.
 
 ## Execution decisions
 
