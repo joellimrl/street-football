@@ -7,7 +7,7 @@ test('kickoffs group into the selected local day including daylight-saving bound
   assert.equal(dateKey('2026-10-24T23:30:00Z', 'Europe/London'), '2026-10-25');
   assert.equal(validTimezone('invalid'), 'Asia/Singapore');
 });
-test('scores are concealed until explicitly revealed, including null and zero scores', () => {
+test('score formatting supports shown and hidden states, including null and zero scores', () => {
   assert.equal(scoreText(fixture(), false), 'Reveal score');
   assert.equal(scoreText(fixture(), true), '2 – 1');
   assert.equal(scoreText(fixture({ score: { home: 0, away: 0 } }), true), '0 – 0');

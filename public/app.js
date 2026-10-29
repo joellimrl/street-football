@@ -6,9 +6,12 @@
   try { saved = JSON.parse(localStorage.getItem('street-football-preferences') || '{}') || {}; } catch { /* Storage is optional. */ }
   const state = { view: 'upcoming', teamId: 'all', matchday: 'all', favoritesOnly: false,
     favorites: Array.isArray(saved.favorites) ? saved.favorites.filter(id => typeof id === 'string') : [], timezone: V.validTimezone(saved.timezone), limit: 40 };
-  let data; let showAllScores = false; const revealed = new Set();
+  const scoreStatuses = ['FINISHED', 'IN_PLAY', 'PAUSED', 'AWARDED'];
+  let data; let showAllScores = true; const scoreOverrides = new Map();
+  const scoreVisible = match => scoreOverrides.get(match.id) ?? showAllScores;
+  const anyScoresVisible = () => data ? data.fixtures.some(match => scoreStatuses.includes(match.status) && scoreVisible(match)) : showAllScores;
   function scoreControl() {
-    const anyRevealed = showAllScores || revealed.size > 0;
+    const anyRevealed = anyScoresVisible();
     $('hide-scores').setAttribute('aria-pressed', String(anyRevealed));
     $('hide-scores').textContent = anyRevealed ? '◉ Hide scores' : '◉ Show all scores';
   }
@@ -47,30 +50,35 @@
     const labels = { FINISHED: 'Full time', IN_PLAY: 'In progress', PAUSED: 'Half time', POSTPONED: 'Postponed', SUSPENDED: 'Suspended', CANCELLED: 'Cancelled', AWARDED: 'Awarded', SCHEDULED: 'Time TBC', TIMED: `GW ${match.matchday || '—'}` };
     kickoff.append(time, el('small', labels[match.status] || 'Scheduled'));
     const teams = el('div', undefined, 'teams'); teams.append(teamNode(match.home), teamNode(match.away)); row.append(kickoff, teams);
-    if (['FINISHED', 'IN_PLAY', 'PAUSED', 'AWARDED'].includes(match.status)) {
+    if (scoreStatuses.includes(match.status)) {
       const score = el('button'); score.type = 'button';
       const update = () => {
-        const visible = showAllScores || revealed.has(match.id); score.textContent = V.scoreText(match, visible);
+        const visible = scoreVisible(match); score.textContent = V.scoreText(match, visible);
         score.className = `score-button${visible ? ' revealed' : ''}`;
         score.setAttribute('aria-label', visible ? `${V.scoreText(match, true)}. Hide score for ${match.home.shortName} versus ${match.away.shortName}` : `Reveal score for ${match.home.shortName} versus ${match.away.shortName}`);
         score.setAttribute('aria-pressed', String(visible));
         scoreControl();
       };
-      score.addEventListener('click', () => { if (showAllScores) { showAllScores = false; revealed.clear(); render(); } else { revealed.has(match.id) ? revealed.delete(match.id) : revealed.add(match.id); update(); } }); update(); row.append(score);
+      score.addEventListener('click', () => { scoreOverrides.set(match.id, !scoreVisible(match)); update(); }); update(); row.append(score);
     } else row.append(el('span', '—', 'score-placeholder'));
     const highlights = V.safeHighlights(match);
     if (highlights.length) {
-      const details = el('details', undefined, 'highlights-action');
-      details.append(el('summary', 'Highlights · may spoil'));
-      details.addEventListener('toggle', () => {
-        if (!details.open) { details.querySelector('.video-disclosure')?.remove(); return; }
-        if (details.querySelector('.video-disclosure')) return;
-        const content = el('div', undefined, 'video-disclosure');
-        content.append(el('p', 'YouTube titles and thumbnails may reveal the score. Fixture matching is by Street Football.', 'preview-note'));
-        const list = el('div', undefined, 'video-list'); for (const video of highlights) list.append(videoCard(video)); content.append(list); details.append(content);
-      });
-      details.firstChild.setAttribute('aria-label', `Show highlights for ${match.home.shortName} versus ${match.away.shortName}; previews may reveal the score`);
-      row.append(details);
+      const section = el('div', undefined, 'match-highlights');
+      section.append(videoCard(highlights[0]));
+      if (highlights.length > 1) {
+        const details = el('details', undefined, 'highlights-action');
+        const count = highlights.length - 1;
+        details.append(el('summary', `${count} more ${count === 1 ? 'highlight' : 'highlights'}`));
+        details.addEventListener('toggle', () => {
+          if (!details.open) { details.querySelector('.video-disclosure')?.remove(); return; }
+          if (details.querySelector('.video-disclosure')) return;
+          const content = el('div', undefined, 'video-disclosure video-list');
+          for (const video of highlights.slice(1)) content.append(videoCard(video));
+          details.append(content);
+        });
+        section.append(details);
+      }
+      row.append(section);
     } else row.append(el('span', match.status === 'FINISHED' ? 'Highlights not available yet' : 'Highlights after the match', 'highlights-action'));
     return row;
   }
@@ -85,7 +93,7 @@
     $('zone-label').textContent = `Times in ${state.timezone.replaceAll('_', ' ')}`;
     $('load-more').hidden = matches.length <= state.limit;
     if (!data.fixtures.length) {
-      empty('The first fixtures are on their way.', 'Match data will appear after the first successful update. Scores will stay hidden until you reveal them.');
+      empty('The first fixtures are on their way.', 'Match times, scores and available highlights will appear after the first successful update.');
       $('result-count').textContent = 'Awaiting first update'; return;
     }
     if (!matches.length) { empty('No matches in this view.', state.favoritesOnly && !state.favorites.length ? 'Star a team in the fixture list, then use My teams to follow them.' : 'Try another team, gameweek or match view.'); return; }
@@ -145,7 +153,7 @@
   $('matchday').addEventListener('change', event => { state.matchday = event.target.value; state.limit = 40; render(); });
   $('timezone').addEventListener('change', event => { state.timezone = V.validTimezone(event.target.value); save(); if (data) freshness(); render(); });
   $('favorites-only').addEventListener('click', () => { state.favoritesOnly = !state.favoritesOnly; state.limit = 40; render(); });
-  $('hide-scores').addEventListener('click', () => { showAllScores = !(showAllScores || revealed.size > 0); revealed.clear(); render(); });
+  $('hide-scores').addEventListener('click', () => { showAllScores = !anyScoresVisible(); scoreOverrides.clear(); render(); });
   $('load-more').addEventListener('click', () => { state.limit += 40; render(); });
   $('refresh').addEventListener('click', load);
   load();

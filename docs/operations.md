@@ -82,9 +82,10 @@ disabled Actions, provider cancellation and repository archival require action.
 
 ## Spoiler protection and data rights
 
-Scores are concealed in the interface, not encrypted: the public JSON includes
-them. Opening a video-preview disclosure shows the original title/thumbnail;
-watching opens YouTube directly. The original video metadata is never blurred
+Scores are shown by default and can be hidden in the interface; the public JSON
+includes them. The first available video shows its original title/thumbnail
+directly, with extra videos behind a disclosure. Watching opens YouTube directly.
+Hiding match scores does not conceal video metadata. Metadata is never blurred
 or rewritten. Fixture matching is identified as Street Football's own feature.
 See the site's privacy/terms page. Hosting publicly and using an MIT code
 licence do not grant rights to the providers' data or club branding.

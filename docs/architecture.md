@@ -7,7 +7,8 @@ Selected: 2026-10-26.
 Build a free, open-source, public Premier League schedule and highlights site.
 Use **cron-job.org + GitHub Actions + GitHub Pages**. The source repository stays public.
 The hosting budget is $0. AWS, MongoDB and StreetBot's Fly deployment are out of
-scope. Scores remain hidden until the user reveals them.
+scope. As requested on 29 October 2026, scores and the first available highlight
+are shown by default; scores can still be hidden and extra highlights expanded.
 
 The collector, snapshot handling and fixture UI are implemented. Live operation
 requires provider credentials, initial bootstrap and the external cron job.
@@ -87,15 +88,16 @@ advertise exact refresh timing or real-time scores.
 
 - Full-season fixtures, upcoming/results/highlights views and team/gameweek
   filters. UTC kickoff timestamps; Asia/Singapore display time by default.
-- Scores hidden by default, including score-bearing page titles and previews.
-  Snapshot scores are public data; spoiler protection is a UI preference.
+- Scores shown by default, with per-match/global hiding. The first available
+  highlight appears directly with its original title, thumbnail and YouTube link.
+  Extra highlights are expandable; score hiding does not conceal video metadata.
 - Verified official highlight links matched using stable channels, aliases
   and timing evidence. Ambiguous candidates remain unresolved.
 - Distinguish no fixtures, highlights not found yet and upstream failures.
 - Use team names and original graphics unless asset rights are established.
   Include the fixture provider's attribution.
-- Check the exact YouTube link/metadata presentation before implementing
-  spoiler-free video cards. Do not download videos or modify embedded players.
+- Preserve the original YouTube link/metadata presentation.
+  Do not download videos or modify embedded players.
   Follow metadata refresh/deletion rules; prolonged workflow inactivity is an
   operational issue, not an exemption.
 - Fork operators supply their own credentials. MIT covers source code, not

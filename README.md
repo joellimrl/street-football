@@ -1,8 +1,8 @@
 # Street Football
 
 A free, open-source Premier League schedule and highlights companion.
-See when matches happen in your time zone, keep scores hidden until you
-choose to reveal them, and follow links to official highlights.
+See when matches happen in your time zone, check scores and follow links
+to official highlights directly from each match card.
 
 **Status:** fixture dashboard and collector implemented. Live operation requires
 the two provider secrets and an initial successful bootstrap (see Operations).
@@ -34,13 +34,14 @@ requests or collector executions.
 
 - Full-season fixtures, with an upcoming-match view and team/gameweek filters.
 - Asia/Singapore display time by default; UTC timestamps in stored data.
-- Scores concealed until revealed, with preferences stored on the device.
-- Direct links to verified official highlights.
+- Scores shown by default, with optional per-match and global hiding.
+- The first verified official highlight shown directly, with more available on expansion.
 - Retryable discovery of delayed uploads and visible data freshness.
 - Clear distinctions between no matches, no highlights yet and failed updates.
 
-Video previews are an explicit disclosure with a spoiler warning. Opening one
-shows the original YouTube title and thumbnail, then a direct YouTube link.
+The top video preview shows the original YouTube title, thumbnail and direct
+YouTube link without expansion. Additional videos use a disclosure. Hiding match
+scores does not conceal video titles or thumbnails, which may contain results.
 No player is embedded; video metadata is refreshed daily or removed before
 30 days. See the privacy/terms page and the operational retention requirement.
 

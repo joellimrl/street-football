@@ -34,9 +34,10 @@ The budget is $0. AWS and separately hosted backend services are out of scope.
 - Persist only public retry/link state in the published snapshot. All deploy
   paths must preserve the last valid data; never use Actions cache as the only
   durable state or commit changing provider metadata to Git history.
-- Scores are hidden by default. Avoid score spoilers in titles, previews and
-  accessibility labels. Review YouTube metadata display requirements before
-  implementing video cards; do not obscure or modify an embedded player.
+- Scores are shown by default, with optional per-match/global hiding. The first
+  available highlight is shown directly; additional highlights use a disclosure.
+  Keep original YouTube titles/thumbnails and attribution; hiding match scores
+  does not conceal video metadata. Do not obscure or modify an embedded player.
 - Use team names and original graphics unless third-party image rights have
   been established. The MIT licence covers source code, not provider content.
 - Do not run production collectors or provision cloud resources as a test.

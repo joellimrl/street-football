@@ -15,7 +15,8 @@ function demonstration() {
   ];
   const fixtures = Array.from({ length: 12 }, (_, i) => fixture({ id: String(100 + i), utcDate: iso(i < 6 ? 1 + Math.floor(i / 3) : -1 - Math.floor((i - 6) / 3)),
     home: clubs[i % 6], away: clubs[(i + 1) % 6], matchday: i < 6 ? 10 : 9, status: i < 6 ? 'TIMED' : 'FINISHED',
-    highlights: i === 6 ? [video({ checkedAt: now.toISOString(), publishedAt: iso(-0.5) })] : [] }));
+    highlights: i === 6 ? [video({ checkedAt: now.toISOString(), publishedAt: iso(-0.5) }),
+      video({ videoId: 'lmnopqrstuv', url: 'https://www.youtube.com/watch?v=lmnopqrstuv', title: 'Arsenal 2-1 Chelsea | Extended highlights', checkedAt: now.toISOString(), publishedAt: iso(-0.4) })] : [] }));
   return snapshot({ generatedAt: now.toISOString(), fixtures, sources: {
     fixtures: { status: 'ok', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString() },
     highlights: { status: 'ok', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString() }

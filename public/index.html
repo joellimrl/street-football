@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Premier League match times and official club highlights. Keep scores hidden until you choose to reveal them.">
+  <meta name="description" content="Premier League match times, scores and official club highlights, ready to watch.">
   <meta name="theme-color" content="#173b31">
   <title>Street Football — Fixtures &amp; highlights</title>
   <link rel="stylesheet" href="./styles.css">
@@ -20,7 +20,7 @@
     <main>
       <section class="intro" aria-labelledby="page-title">
         <div><p class="eyebrow">Premier League <span id="season"></span></p><h1 id="page-title">Your matchday.</h1><p class="lead">Match times. Official highlights. Scores on your terms.</p></div>
-        <button class="spoiler-toggle" id="hide-scores" type="button" aria-pressed="false"><span aria-hidden="true">◉</span> Show all scores</button>
+        <button class="spoiler-toggle" id="hide-scores" type="button" aria-pressed="true" title="Hides match scores only; highlight titles and thumbnails may contain results."><span aria-hidden="true">◉</span> Hide scores</button>
       </section>
       <nav class="views" aria-label="Match views">
         <button type="button" data-view="upcoming" aria-pressed="true">Upcoming</button>
@@ -39,9 +39,9 @@
       <section id="matches" aria-label="Fixtures" aria-busy="true" tabindex="-1"><div class="empty-state"><span class="pitch-icon" aria-hidden="true">＋</span><h2>Getting the fixtures…</h2></div></section>
       <button id="load-more" class="load-more" type="button" hidden>Show more matches</button>
       <section class="freshness" aria-label="Data freshness"><p id="fixtures-freshness">Fixtures: checking…</p><p id="highlights-freshness">Highlights: checking…</p><button id="refresh" type="button">Refresh page data ↻</button></section>
-      <noscript><p class="notice">Enable JavaScript to view fixtures and reveal scores.</p></noscript>
+      <noscript><p class="notice">Enable JavaScript to view fixtures, scores and highlights.</p></noscript>
     </main>
-    <footer><p>Independent. Free. Made for matchday.<br><span>Football data provided by the <a href="https://www.football-data.org/">Football-Data.org API</a>.</span></p><p><a href="./privacy.html">Privacy &amp; terms</a><br><span>Highlight videos are hosted on YouTube.</span></p></footer>
+    <footer><p>Independent. Free. Made for matchday.<br><span>Football data provided by the <a href="https://www.football-data.org/">Football-Data.org API</a>.</span></p><p><a href="./privacy.html">Privacy &amp; terms</a><br><span>Videos on YouTube · Matching by Street Football.</span></p></footer>
   </div>
 </body>
 </html>
